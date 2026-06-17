@@ -1,0 +1,30 @@
+{
+  "name": "siyuan-home",
+  "author": "yclbt",
+  "url": "https://github.com/yclbt/siyuan-home",
+  "version": "1.0.0",
+  "minAppVersion": "3.6.5",
+  "backends": ["all"],
+  "frontends": ["all"],
+  "disabledInPublish": true,
+  "displayName": {
+    "default": "HOME Pro",
+    "zh_CN": "主页 Pro"
+  },
+  "description": {
+    "default": "Highly customizable homepage with rich functional modules, fully mobile-adapted",
+    "zh_CN": "高仿 siyuan-homepage，提供个性化首页布局和丰富的功能模块，完美适配移动端"
+  },
+  "readme": {
+    "default": "README.md",
+    "zh_CN": "README_zh_CN.md"
+  },
+  "funding": {
+    "custom": []
+  },
+  "keywords": [
+    "homepage", "home", "主页", "首页",
+    "widget", "组件", "任务", "笔记",
+    "dashboard", "工作台"
+  ]
+}

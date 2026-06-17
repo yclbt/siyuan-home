@@ -1,0 +1,32 @@
+{
+  "name": "siyuan-home",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "高仿 siyuan-homepage，可高度定制的信息聚合主页，完美适配移动端",
+  "repository": "https://github.com/yclbt/siyuan-home",
+  "author": "yclbt",
+  "license": "MIT",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development vite build --watch",
+    "build": "cross-env NODE_ENV=production vite build",
+    "make-link": "node --no-warnings ./scripts/make_dev_link.js",
+    "make-install": "npm run build && node --no-warnings ./scripts/make_install.js",
+    "make-link-win": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/elevate.ps1 -scriptPath ./scripts/make_dev_link.js"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^25.5.2",
+    "cross-env": "^10.1.0",
+    "sass-embedded": "^1.89.2",
+    "siyuan": "1.2.0",
+    "fast-glob": "^3.2.12",
+    "svelte": "^5.55.1",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.0"
+  },
+  "dependencies": {
+    "sortablejs": "^1.15.0",
+    "echarts": "^5.5.0"
+  }
+}

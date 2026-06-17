@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Package
+        run: |
+          mkdir -p temp/plugin
+          cp plugin.json temp/plugin/
+          cp icon.png temp/plugin/
+          [ -f preview.png ] && cp preview.png temp/plugin/ || true
+          cp README.md temp/plugin/
+          [ -f README_zh_CN.md ] && cp README_zh_CN.md temp/plugin/ || true
+          cp dist/index.js temp/plugin/index.js
+          CSS_FILE=$(ls dist/*.css | head -1)
+          cp "$CSS_FILE" temp/plugin/index.css
+          [ -d i18n ] && cp -r i18n temp/plugin/ || true
+          cd temp/plugin
+          zip -r ../../package.zip .
+          cd ../..
+          rm -rf temp
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: package.zip
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
