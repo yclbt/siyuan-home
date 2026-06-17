@@ -19,14 +19,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-
       - name: Install dependencies
-        run: pnpm install
+        run: npm install --include=dev
 
       - name: Build
-        run: pnpm run build
+        run: npm run build
 
       - name: Package
         run: |
@@ -50,4 +47,3 @@ jobs:
         with:
           files: package.zip
           generate_release_notes: true
-          token: ${{ secrets.GITHUB_TOKEN }}
