@@ -1,38 +1,47 @@
+import { resolve } from "path";
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import path from "path";
 
-const resolve = (p: string) => path.resolve(__dirname, p);
+const env = process.env;
+const isDev = env.NODE_ENV === "development";
+const outputDir = isDev ? "dev" : "dist";
 
 export default defineConfig({
-  plugins: [svelte()],
   resolve: {
     alias: {
-      "@": resolve("src"),
+      "@": resolve(__dirname, "src"),
     },
   },
+
+  plugins: [svelte()],
+
+  define: {
+    "process.env.DEV_MODE": JSON.stringify(isDev),
+    "process.env.NODE_ENV": JSON.stringify(env.NODE_ENV),
+  },
+
   build: {
-    outDir: "dist",
-    emptyOutDir: true,
+    outDir: outputDir,
+    emptyOutDir: false,
+    minify: true,
+    sourcemap: false,
+
     lib: {
-      entry: resolve("src/index.ts"),
-      formats: ["es"],
-      fileName: () => "index.js",
+      entry: resolve(__dirname, "src/index.ts"),
+      fileName: "index",
+      formats: ["cjs"],
     },
     rollupOptions: {
-      external: ["siyuan"],
+      external: ["siyuan", "process"],
       output: {
+        entryFileNames: "[name].js",
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "style.css") return "index.css";
-          return assetInfo.name ?? "assets/[name].[ext]";
+          if (assetInfo.name === "style.css") {
+            return "index.css";
+          }
+          return assetInfo.name;
         },
       },
     },
-    cssCodeSplit: false,
-    minify: true,
-    sourcemap: false,
-  },
-  server: {
-    port: 6699,
   },
 });

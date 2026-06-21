@@ -1,153 +1,67 @@
+import { Plugin, openTab, getFrontend } from "siyuan";
 import { mount, unmount } from "svelte";
-import { Plugin } from "siyuan";
-
-import { configManager } from "@/libs/config";
-import { eventBus } from "@/libs/eventBus";
-import { isMobile } from "@/libs/utils";
 import HomepagePanel from "./homepage/HomepagePanel.svelte";
-import HomepageSettings from "./homepage/settings/HomepageSettings.svelte";
 
-const TAB_TYPE = "homepage_pro_tab";
-const TAB_ID = "siyuan-homepage-pro-tab";
-const DOCK_TYPE = "homepage_pro_dock";
-const SETTINGS_TAB_TYPE = "homepage_pro_settings_tab";
-
-declare global {
-  interface Window {
-    siyuanHomepage?: {
-      plugin: PluginHomepage;
-    };
-  }
-}
+const TAB_TYPE = "home_pro_tab";
 
 export default class PluginHomepage extends Plugin {
-  private homepageInstance: Record<string, any> | null = null;
-  private homepageTabDiv: HTMLDivElement | null = null;
-  private settingsInstance: Record<string, any> | null = null;
-  private sidebarDockInstance: Record<string, any> | null = null;
-  private isMobileDevice = false;
+  onload() {
+    console.log("[HOME Pro] Loading...");
 
-  async onload() {
-    console.log("[Homepage Pro] Loading...");
+    const frontEnd = getFrontend();
+    const isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
-    // 加载配置
-    await configManager.load();
+    this.addIcons(`<symbol id="iconHome" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"/>
+      <path d="M9 22V12H15V22"/>
+    </symbol>`);
 
-    // 检测设备类型
-    this.isMobileDevice = isMobile();
-    window.addEventListener("resize", () => {
-      const mobile = isMobile();
-      if (mobile !== this.isMobileDevice) {
-        this.isMobileDevice = mobile;
-        eventBus.emit("homepage:mobile-toggle", { mobile });
-      }
-    });
-
-    // 暴露插件实例给全局
-    window.siyuanHomepage = { plugin: this };
-
-    // 注册主页标签页
     this.addTab({
       type: TAB_TYPE,
-      id: TAB_ID,
-      app: this.app,
-      icon: "iconHomepage",
-      init: () => {
-        this.homepageTabDiv = document.createElement("div");
-        this.homepageTabDiv.style.height = "100%";
-        this.homepageTabDiv.style.overflow = "auto";
-
-        this.homepageInstance = mount(HomepagePanel, {
-          target: this.homepageTabDiv,
-          props: {
-            plugin: this,
-            isMobile: this.isMobileDevice,
-          },
-        });
-
-        return this.homepageTabDiv;
+      init() {
+        console.log("[Tab init]");
+        const container = document.createElement("div");
+        container.style.cssText = "height:100%;overflow:auto;";
+        this.app = mount(HomepagePanel, { target: container, props: { isMobile } });
+        this.element.appendChild(container);
       },
-      destroy: () => {
-        if (this.homepageInstance) {
-          unmount(this.homepageInstance);
-          this.homepageInstance = null;
-        }
-        this.homepageTabDiv = null;
+      destroy() {
+        if (this.app) { unmount(this.app); this.app = null; }
       },
     });
 
-    // 注册停靠栏（侧边栏）
-    this.addDock({
-      type: DOCK_TYPE,
-      tab: TAB_TYPE,
-      index: 0,
-      title: "主页",
-      icon: "iconHomepage",
-      hotkey: "⌘H",
-      position: "LeftTop",
-    });
+    if (isMobile) {
+      // Mobile: use dock as entry point (mobile has bottom dock)
+      this.addDock({
+        config: { icon: "iconHome", title: "主页", position: "LeftTop", index: 0, size: { width: 200, height: 0 } },
+        data: {},
+        type: "home_dock",
+        init() {
+          const div = document.createElement("div");
+          div.style.cssText = "padding:16px;text-align:center;";
+          div.textContent = "打开主页";
+          div.onclick = () => {
+            openTab({ app: this.app, custom: { icon: "iconHome", title: "首页", data: {}, id: this.name + TAB_TYPE } });
+          };
+          this.element.appendChild(div);
+        },
+      });
+    } else {
+      // Desktop: top bar button
+      this.addTopBar({
+        icon: "iconHome",
+        title: "打开主页",
+        position: "left",
+        callback: () => {
+          openTab({ app: this.app, custom: { icon: "iconHome", title: "首页", data: {}, id: this.name + TAB_TYPE } });
+        },
+      });
+    }
 
-    // 注册设置入口
-    this.addTab({
-      type: SETTINGS_TAB_TYPE,
-      id: `${TAB_ID}-settings`,
-      app: this.app,
-      icon: "iconSettings",
-      init: () => {
-        const div = document.createElement("div");
-        div.style.height = "100%";
-        div.style.overflow = "auto";
-        this.settingsInstance = mount(HomepageSettings, {
-          target: div,
-          props: { plugin: this },
-        });
-        return div;
-      },
-      destroy: () => {
-        if (this.settingsInstance) {
-          unmount(this.settingsInstance);
-          this.settingsInstance = null;
-        }
-      },
-    });
-
-    // 监听事件
-    eventBus.on("homepage:config-changed", () => {
-      // 配置变化时自动保存
-    });
-
-    console.log("[Homepage Pro] Loaded successfully");
+    console.log("[HOME Pro] Loaded");
   }
 
   onunload() {
-    console.log("[Homepage Pro] Unloading...");
-    eventBus.clear();
-    window.siyuanHomepage = undefined;
-  }
-
-  openSettings() {
-    this.openTab({
-      id: `${TAB_ID}-settings`,
-      type: SETTINGS_TAB_TYPE,
-      app: this.app,
-    });
-  }
-
-  /** 打开指定文档 */
-  openDoc(docId: string) {
-    try {
-      // 通过思源内置方法打开文档
-      const siyuan = (window as any).siyuan;
-      if (siyuan?.openTab) {
-        siyuan.openTab({ id: docId, app: this.app });
-      }
-    } catch (e) {
-      console.error("[Homepage] Failed to open doc:", e);
-    }
-  }
-
-  /** 获取是否移动端 */
-  get isMobile(): boolean {
-    return this.isMobileDevice;
+    console.log("[HOME Pro] Unloaded");
   }
 }
